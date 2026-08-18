@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Bug Dodger – dodge falling bugs and survive as long as you can!" />
+  <title>Bug Dodger 🐛</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <div id="background-grid"></div>
+
+  <div id="app">
+    <!-- Header -->
+    <header id="game-header">
+      <h1 id="game-title">BUG DODGER</h1>
+      <div id="hud">
+        <div class="hud-item">
+          <span class="hud-label">SCORE</span>
+          <span id="score-display" class="hud-value">0</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">BEST</span>
+          <span id="best-display" class="hud-value">0</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">LEVEL</span>
+          <span id="level-display" class="hud-value">1</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Game Arena -->
+    <main id="arena-wrapper">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Overlays -->
+      <div id="start-screen" class="overlay active">
+        <div class="overlay-card">
+          <div class="overlay-icon">🐛</div>
+          <h2>BUG DODGER</h2>
+          <p class="overlay-sub">Dodge the falling bugs for as long as you can!</p>
+          <ul class="controls-list">
+            <li><kbd>←</kbd><kbd>→</kbd> Move player</li>
+            <li><kbd>A</kbd><kbd>D</kbd> Alternative keys</li>
+          </ul>
+          <button id="start-btn" class="btn btn-primary">START GAME</button>
+        </div>
+      </div>
+
+      <div id="game-over-screen" class="overlay">
+        <div class="overlay-card">
+          <div class="overlay-icon">💥</div>
+          <h2>GAME OVER</h2>
+          <div id="final-stats">
+            <div class="stat-row">
+              <span class="stat-label">Score</span>
+              <span id="final-score" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Best</span>
+              <span id="final-best" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Level</span>
+              <span id="final-level" class="stat-value">1</span>
+            </div>
+          </div>
+          <button id="restart-btn" class="btn btn-primary">RESTART</button>
+          <button id="menu-btn" class="btn btn-secondary">MAIN MENU</button>
+        </div>
+      </div>
+    </main>
+
+    <footer id="game-footer">
+      <p>Built with ❤️ — Week 01 · AI-Assisted Dev Lab</p>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
