@@ -50,7 +50,7 @@ const menuBtn       = document.getElementById('menu-btn');
 const PLAYER_SIZE    = 28;       // px
 const PLAYER_SPEED   = 6;        // px per frame
 const PLAYER_Y_INSET = 48;       // distance from bottom
-const BUG_SIZE       = 28;
+const BUG_SIZE       = 34;
 const BUG_EMOJIS     = ['🐛', '🐜', '🦟', '🪲', '🕷️'];
 const BASE_BUG_SPEED = 2.5;
 const MAX_BUG_SPEED  = 9;
@@ -286,21 +286,49 @@ function drawPlayer() {
 }
 
 function drawBugs() {
-  const t = state.frame;
-  ctx.font = `${BUG_SIZE}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   for (const bug of bugs) {
-    ctx.save();
-    // Spinning fall effect
     const cx = bug.x + bug.size / 2;
     const cy = bug.y + bug.size / 2;
-    ctx.translate(cx, cy);
-    ctx.rotate(Math.sin(t * 0.05 + bug.wobble) * 0.3);
-    ctx.fillText(bug.emoji, 0, 0);
+    const r  = bug.size / 2;
+
+    ctx.save();
+
+    // ── Outer red glow ──
+    ctx.shadowColor = '#ff1a1a';
+    ctx.shadowBlur  = 18;
+
+    // ── Main red body (radial gradient for 3D shiny look) ──
+    const bodyGrad = ctx.createRadialGradient(
+      cx - r * 0.3, cy - r * 0.3, r * 0.05,  // highlight centre (top-left)
+      cx,           cy,           r            // outer edge
+    );
+    bodyGrad.addColorStop(0,   '#ff6666');   // bright highlight
+    bodyGrad.addColorStop(0.4, '#ff1a1a');   // vivid red mid
+    bodyGrad.addColorStop(1,   '#7a0000');   // deep shadow edge
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+
+    // ── Specular shine (small white highlight top-left) ──
+    const shineGrad = ctx.createRadialGradient(
+      cx - r * 0.3, cy - r * 0.35, 0,
+      cx - r * 0.2, cy - r * 0.2,  r * 0.55
+    );
+    shineGrad.addColorStop(0,   'rgba(255,255,255,0.75)');
+    shineGrad.addColorStop(0.5, 'rgba(255,255,255,0.15)');
+    shineGrad.addColorStop(1,   'rgba(255,255,255,0)');
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = shineGrad;
+    ctx.fill();
+
     ctx.restore();
   }
 }
+
 
 /** Polyfill for ctx.roundRect (fallback for older browsers) */
 function roundRect(ctx, x, y, w, h, r) {
