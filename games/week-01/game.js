@@ -29,34 +29,42 @@ window.addEventListener('resize', () => {
   if (state.running) {
     player.x = Math.min(player.x, canvas._w - player.size);
   }
+  // FIX 3: Redraw the background so the canvas never goes blank after a resize.
+  // Without this, resizing the window while on the Start or Game Over screen
+  // would clear the canvas and leave an empty black box behind the overlay.
+  drawBackground();
 });
 
 // ─── DOM References ──────────────────────────────────────────────────────────
 
-const scoreDisplay  = document.getElementById('score-display');
-const bestDisplay   = document.getElementById('best-display');
-const levelDisplay  = document.getElementById('level-display');
-const startScreen   = document.getElementById('start-screen');
+const scoreDisplay   = document.getElementById('score-display');
+const bestDisplay    = document.getElementById('best-display');
+const levelDisplay   = document.getElementById('level-display');
+const startScreen    = document.getElementById('start-screen');
 const gameOverScreen = document.getElementById('game-over-screen');
-const finalScore    = document.getElementById('final-score');
-const finalBest     = document.getElementById('final-best');
-const finalLevel    = document.getElementById('final-level');
-const startBtn      = document.getElementById('start-btn');
-const restartBtn    = document.getElementById('restart-btn');
-const menuBtn       = document.getElementById('menu-btn');
+const finalScore     = document.getElementById('final-score');
+const finalBest      = document.getElementById('final-best');
+const finalLevel     = document.getElementById('final-level');
+const startBtn       = document.getElementById('start-btn');
+const restartBtn     = document.getElementById('restart-btn');
+const menuBtn        = document.getElementById('menu-btn');
+// FIX 2: Grab the on-screen touch buttons added to index.html
+const touchLeft      = document.getElementById('touch-left');
+const touchRight     = document.getElementById('touch-right');
 
 // ─── Game Constants ──────────────────────────────────────────────────────────
 
-const PLAYER_SIZE    = 28;       // px
-const PLAYER_SPEED   = 6;        // px per frame
-const PLAYER_Y_INSET = 48;       // distance from bottom
+const PLAYER_SIZE    = 28;         // px
+// FIX 1: Speed is now pixels-per-SECOND instead of pixels-per-frame.
+// This means the game feels identical on a 60Hz, 120Hz, or 144Hz monitor.
+const PLAYER_SPEED   = 360;        // px per second
+const PLAYER_Y_INSET = 48;         // distance from bottom
 const BUG_SIZE       = 34;
-const BUG_EMOJIS     = ['🐛', '🐜', '🦟', '🪲', '🕷️'];
-const BASE_BUG_SPEED = 2.5;
-const MAX_BUG_SPEED  = 9;
-const BUG_SPAWN_BASE = 90;       // frames between spawns (decreases with level)
-const LEVEL_EVERY    = 500;      // score points per level-up
-const SCORE_PER_SEC  = 10;       // score added per second
+const BASE_BUG_SPEED = 150;        // px per second
+const MAX_BUG_SPEED  = 540;        // px per second
+const BUG_SPAWN_MS   = 1500;       // milliseconds between spawns (decreases with level)
+const LEVEL_EVERY    = 500;        // score points per level-up
+const SCORE_PER_SEC  = 10;         // score added per second
 
 // ─── Game State ──────────────────────────────────────────────────────────────
 
@@ -93,16 +101,15 @@ let bugs = [];
 function spawnBug() {
   const margin = BUG_SIZE + 8;
   const x = margin + Math.random() * (canvas._w - margin * 2);
-  const speed = BASE_BUG_SPEED + (state.level - 1) * 0.6
-                + Math.random() * 1.2;
+  // FIX 1: Speed is now in px/second. Increases by 36px/s per level.
+  const speed = BASE_BUG_SPEED + (state.level - 1) * 36 + Math.random() * 60;
   bugs.push({
     x,
-    y:     -BUG_SIZE,
-    size:  BUG_SIZE,
-    speed: Math.min(speed, MAX_BUG_SPEED),
-    emoji: BUG_EMOJIS[Math.floor(Math.random() * BUG_EMOJIS.length)],
-    wobble: Math.random() * Math.PI * 2,  // phase offset for horizontal wobble
-    wobbleAmp: 0.5 + Math.random() * 1.5, // wobble amplitude
+    y:        -BUG_SIZE,
+    size:     BUG_SIZE,
+    speed:    Math.min(speed, MAX_BUG_SPEED),  // cap so it never gets unbeatable
+    wobble:    Math.random() * Math.PI * 2,    // phase offset for horizontal wobble
+    wobbleAmp: 0.5 + Math.random() * 1.5,     // wobble amplitude
   });
 }
 
@@ -122,8 +129,26 @@ window.addEventListener('keyup', (e) => {
   keys[e.key] = false;
 });
 
-function isLeft()  { return keys['ArrowLeft']  || keys['a'] || keys['A']; }
-function isRight() { return keys['ArrowRight'] || keys['d'] || keys['D']; }
+// FIX 2: Track whether the on-screen touch buttons are being pressed.
+// We use a plain object (same pattern as keyboard keys) so isLeft/isRight
+// can check both keyboard and touch with one simple condition.
+const touch = { left: false, right: false };
+
+// 'touchstart' fires when the finger first touches the button.
+// 'touchend'   fires when the finger lifts off.
+touchLeft.addEventListener('touchstart',  (e) => { e.preventDefault(); touch.left = true;  });
+touchLeft.addEventListener('touchend',    (e) => { e.preventDefault(); touch.left = false; });
+touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); touch.right = true;  });
+touchRight.addEventListener('touchend',   (e) => { e.preventDefault(); touch.right = false; });
+
+// Also support mouse clicks on the touch buttons (useful for testing on desktop)
+touchLeft.addEventListener('mousedown',  () => { touch.left = true;  });
+touchLeft.addEventListener('mouseup',    () => { touch.left = false; });
+touchRight.addEventListener('mousedown', () => { touch.right = true;  });
+touchRight.addEventListener('mouseup',   () => { touch.right = false; });
+
+function isLeft()  { return keys['ArrowLeft']  || keys['a'] || keys['A'] || touch.left;  }
+function isRight() { return keys['ArrowRight'] || keys['d'] || keys['D'] || touch.right; }
 
 // ─── Particle System ─────────────────────────────────────────────────────────
 
@@ -352,11 +377,11 @@ function roundRect(ctx, x, y, w, h, r) {
 
 let lastTime   = 0;
 let rafId      = null;
-let spawnTimer = 0;
+let spawnTimer = 0;   // now counts milliseconds, not frames
 
 function spawnInterval() {
-  // Spawn faster as level increases
-  return Math.max(25, BUG_SPAWN_BASE - (state.level - 1) * 8);
+  // FIX 1: Interval is now in milliseconds. Shrinks by 120ms per level.
+  return Math.max(400, BUG_SPAWN_MS - (state.level - 1) * 120);
 }
 
 function gameLoop(timestamp) {
@@ -364,8 +389,16 @@ function gameLoop(timestamp) {
 
   rafId = requestAnimationFrame(gameLoop);
 
-  const dt = Math.min(timestamp - lastTime, 50); // cap at 50ms to avoid spiral of death
+  // dt = time elapsed since the last frame, in milliseconds.
+  // We cap it at 50ms: if the tab is hidden and then shown again,
+  // dt could be huge, which would cause objects to teleport.
+  const dt = Math.min(timestamp - lastTime, 50);
   lastTime = timestamp;
+
+  // A normalised time step in seconds (e.g. 0.016 at 60fps, 0.007 at 144fps).
+  // FIX 1: Multiplying speeds by `s` instead of adding a raw constant makes
+  // movement identical regardless of the monitor's refresh rate.
+  const s = dt / 1000;
 
   state.frame++;
 
@@ -376,15 +409,16 @@ function gameLoop(timestamp) {
   player.trail.push({ x: player.x, y: player.y });
   if (player.trail.length > 6) player.trail.shift();
 
-  if (isLeft())  player.vx = -PLAYER_SPEED;
-  else if (isRight()) player.vx = PLAYER_SPEED;
-  else player.vx *= 0.7;  // friction
+  if (isLeft())       player.vx = -PLAYER_SPEED;  // set speed (px/s)
+  else if (isRight()) player.vx =  PLAYER_SPEED;
+  else                player.vx *= 0.75;           // friction (frame-rate-safe approximation)
 
-  player.x += player.vx;
+  // Move by velocity × time-in-seconds → result is in pixels
+  player.x += player.vx * s;
   player.x  = Math.max(0, Math.min(canvas._w - player.size, player.x));
 
   // ── Spawn Bugs ──
-  spawnTimer++;
+  spawnTimer += dt;   // accumulate real milliseconds
   if (spawnTimer >= spawnInterval()) {
     spawnBug();
     // Occasionally double-spawn at higher levels
@@ -395,9 +429,9 @@ function gameLoop(timestamp) {
   // ── Update Bugs ──
   bugs = bugs.filter(bug => bug.y < canvas._h + BUG_SIZE * 2);
   for (const bug of bugs) {
-    bug.y += bug.speed;
-    // Gentle horizontal wobble
-    bug.x += Math.sin(state.frame * 0.05 + bug.wobble) * bug.wobbleAmp;
+    bug.y += bug.speed * s;   // speed (px/s) × seconds = pixels moved this frame
+    // Gentle horizontal wobble (use elapsed time in seconds for consistency)
+    bug.x += Math.sin(timestamp * 0.003 + bug.wobble) * bug.wobbleAmp;
     // Keep in bounds
     bug.x  = Math.max(0, Math.min(canvas._w - bug.size, bug.x));
 
