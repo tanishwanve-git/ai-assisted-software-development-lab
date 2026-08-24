@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from common import DEFAULT_MODEL
 
 from llm import call_llm, create_initial_messages
-from tools import AVAILABLE_TOOLS, TOOLS_SCHEMA
+from tools import AVAILABLE_TOOLS, DANGEROUS_TOOLS, TOOLS_SCHEMA
 
 # Optional model argument from CLI (defaults to openrouter/free)
 model = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_MODEL
@@ -17,7 +17,7 @@ model = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_MODEL
 messages: list[ChatCompletionMessageParam] = create_initial_messages()
 
 print(f"--- Chat with Tools Started (Model: {model}) ---")
-print("Available tools: get_current_time, get_current_weather")
+print("Available tools: get_current_time, get_current_weather, roll_dice, get_time_in, delete_file")
 print("Type 'exit' or 'quit' to stop.\n")
 
 # Interactive chat loop
@@ -63,11 +63,22 @@ while True:
 
             print(f"\n⚙️  Tool Call: {function_name}({arguments})")
 
-            # Execute corresponding tool function
-            tool_fn = AVAILABLE_TOOLS.get(function_name)
-            result = tool_fn(**arguments) if tool_fn else f"Error: Tool '{function_name}' not found"
-
-            print(f"📥 Tool Output: {result}\n")
+            # Guardrail: ask for user confirmation before running dangerous tools
+            if function_name in DANGEROUS_TOOLS:
+                confirm = input(f"⚠️  '{function_name}' is a dangerous operation. Proceed? (y/n): ")
+                if confirm.strip().lower() != "y":
+                    result = f"Tool '{function_name}' was denied by the user."
+                    print(f"🚫 Tool execution denied by user.\n")
+                else:
+                    # Execute corresponding tool function
+                    tool_fn = AVAILABLE_TOOLS.get(function_name)
+                    result = tool_fn(**arguments) if tool_fn else f"Error: Tool '{function_name}' not found"
+                    print(f"📥 Tool Output: {result}\n")
+            else:
+                # Execute corresponding tool function
+                tool_fn = AVAILABLE_TOOLS.get(function_name)
+                result = tool_fn(**arguments) if tool_fn else f"Error: Tool '{function_name}' not found"
+                print(f"📥 Tool Output: {result}\n")
 
             # Append tool result to conversation history
             messages.append(
