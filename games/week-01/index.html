@@ -46,6 +46,7 @@
           <ul class="controls-list">
             <li><kbd>←</kbd><kbd>→</kbd> Move player</li>
             <li><kbd>A</kbd><kbd>D</kbd> Alternative keys</li>
+            <li>📱 On-screen buttons on mobile</li>
           </ul>
           <button id="start-btn" class="btn btn-primary">START GAME</button>
         </div>
@@ -72,6 +73,14 @@
           <button id="restart-btn" class="btn btn-primary">RESTART</button>
           <button id="menu-btn" class="btn btn-secondary">MAIN MENU</button>
         </div>
+      </div>
+
+      <!-- FIX 2: On-screen buttons for mobile / touch devices.
+           These sit at the bottom corners of the arena, always visible
+           during gameplay. They are hidden automatically by the overlays. -->
+      <div id="touch-controls">
+        <button id="touch-left"  aria-label="Move Left">◀</button>
+        <button id="touch-right" aria-label="Move Right">▶</button>
       </div>
     </main>
 

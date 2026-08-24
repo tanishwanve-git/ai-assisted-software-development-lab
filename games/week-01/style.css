@@ -314,6 +314,43 @@ kbd {
   background: rgba(0, 229, 255, 0.05);
 }
 
+/* --- Touch Controls (Fix 2: Mobile Support) ---
+   Two large buttons pinned to the bottom-left and bottom-right of the arena.
+   They only appear during gameplay (the overlay hides them on Start/Game Over). */
+#touch-controls {
+  position: absolute;
+  bottom: 60px;          /* sit just above the ground line */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+  pointer-events: none;  /* the container itself doesn't block clicks */
+  z-index: 5;
+}
+
+#touch-controls button {
+  pointer-events: all;   /* the buttons DO receive touch events */
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--accent);
+  font-size: 28px;
+  cursor: pointer;
+  /* Make the button feel responsive on tap */
+  transition: background 0.1s, transform 0.1s;
+  /* Disable the default blue highlight on mobile tap */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#touch-controls button:active {
+  background: rgba(0, 229, 255, 0.3);
+  transform: scale(0.92);
+}
+
 /* --- Footer --- */
 #game-footer {
   flex-shrink: 0;
