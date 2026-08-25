@@ -4,16 +4,16 @@
 Antigravity IDE with Claude 3.5 Sonnet / Claude 3.7 Sonnet.
 
 ## Prompt given
-Asked the AI to implement new tools (`roll_dice`, `get_time_in`, `delete_file`, `read_file`, `write_file`, and `run_bash`) in `tools.py` with OpenAI function schemas, add confirmation message for dangerous operations in `main.py`, create a git feature branch, open a PR, and write a bash test suite.
+I asked the AI to help me build tool-calling capabilities in Python, including safe tools like dice rolling and time checking, along with file reading, writing, and bash command execution. I also asked it to add user confirmation prompts for dangerous operations, handle git branching/PRs, and write a test script.
 
 ## What AI produced
-The AI wrote the tool functions, created the corresponding JSON schemas, updated the tool registry, added interactive `input()` confirmation prompts for destructive tools, managed git branching and PR creation, and created `test_tools.py`.
+It generated the Python functions for each tool, wrote the OpenAI-compatible JSON schemas, set up a tool registry, built the interactive confirmation prompt in the main loop, created the git feature branch, and wrote an automated test script.
 
 ## What I changed manually
-I ran the environment activation commands, set my `OPENROUTER_API_KEY`, approved terminal prompts, completed the GitHub web device login flow (`gh auth login`), and merged the pull request into `main` directly on GitHub.
+I activated my virtual environment, exported my OpenRouter API key, authorized the GitHub device login in my browser, and merged the pull request into the main branch on GitHub.Also, I needed to make sure there are no bugs in the working model and tried testing it myself.
 
 ## How I verified it
-I executed `python3 test_tools.py` in the terminal to verify all 23 unit tests passed across all tools, and interactively tested `main.py` with real prompts (weather, dice rolls, file reads, and file deletions with `y/n` confirmation prompts).
+I ran the test script in my terminal to make sure all tool functions passed, and then manually tested the chatbot loop by giving it prompts like checking the weather, rolling dice, reading files, and attempting file deletions to verify the yes/no confirmation prompt worked.
 
 ## What I still do not understand
-How to prevent run_bash from being abused with command injection—like if someone tricks the LLM into running rm -rf / or chaining extra commands with ; or &&.
+How to safely prevent command injection in tools that run shell commands, so an LLM can't be tricked into executing harmful commands like rm -rf or chaining extra commands.
