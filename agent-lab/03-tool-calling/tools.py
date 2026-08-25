@@ -1,4 +1,6 @@
+import ast
 import datetime
+import operator
 import os
 import random
 import subprocess
@@ -124,6 +126,44 @@ def run_bash(command: str) -> str:
         return f"Error running command: {e}"
 
 
+# Whitelisted operators for safe expression evaluation
+_SAFE_OPS = {
+    ast.Add:  operator.add,
+    ast.Sub:  operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div:  operator.truediv,
+    ast.Pow:  operator.pow,
+    ast.Mod:  operator.mod,
+    ast.USub: operator.neg,
+}
+
+
+def _eval_node(node):
+    """Recursively evaluate a safe AST node."""
+    if isinstance(node, ast.Constant):
+        return node.value
+    elif isinstance(node, ast.BinOp) and type(node.op) in _SAFE_OPS:
+        return _SAFE_OPS[type(node.op)](_eval_node(node.left), _eval_node(node.right))
+    elif isinstance(node, ast.UnaryOp) and type(node.op) in _SAFE_OPS:
+        return _SAFE_OPS[type(node.op)](_eval_node(node.operand))
+    else:
+        raise ValueError(f"Unsupported operation: {ast.dump(node)}")
+
+
+def calculator(expression: str) -> str:
+    """Safely evaluate a mathematical expression and return the result."""
+    try:
+        tree = ast.parse(expression.strip(), mode="eval")
+        result = _eval_node(tree.body)
+        # Format: remove trailing .0 for whole numbers
+        formatted = int(result) if isinstance(result, float) and result.is_integer() else result
+        return f"🧠 {expression} = {formatted}"
+    except ZeroDivisionError:
+        return "Error: Division by zero."
+    except Exception as e:
+        return f"Error evaluating expression '{expression}': {e}"
+
+
 # 2. Tool dispatch registry mapping function names to callable Python functions
 AVAILABLE_TOOLS = {
     "get_current_time": get_current_time,
@@ -134,10 +174,12 @@ AVAILABLE_TOOLS = {
     "read_file": read_file,
     "write_file": write_file,
     "run_bash": run_bash,
+    "calculator": calculator,
 }
 
 # Tools that require user confirmation before execution
 DANGEROUS_TOOLS = {"delete_file", "write_file", "run_bash"}
+# calculator and read_file are read-only / safe — no confirmation needed
 
 # 3. OpenAI-compatible tool definitions schema exposed to the model
 TOOLS_SCHEMA = [
@@ -278,6 +320,23 @@ TOOLS_SCHEMA = [
                     }
                 },
                 "required": ["command"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "calculator",
+            "description": "Safely evaluate a mathematical expression and return the numeric result. Supports +, -, *, /, **, % operators.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "A math expression e.g. '(34 * 9/5) + 32' or '2 ** 10' or '100 % 7'",
+                    }
+                },
+                "required": ["expression"],
             },
         },
     },
