@@ -8,14 +8,23 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from common import DEFAULT_MODEL
 
-from llm import call_llm, create_initial_messages
+from llm import PERSONAS, call_llm, create_initial_messages
 from tools import AVAILABLE_TOOLS, DANGEROUS_TOOLS, TOOLS_SCHEMA
 
-# ── CLI args ────────────────────────────────────────────────
-# Usage: python main.py [model] [persona]
-# Personas: default | engineer | tutor
-model   = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_MODEL
-persona = sys.argv[2] if len(sys.argv) > 2 else "default"
+# Smart CLI arg parsing:
+#   python main.py                        → DEFAULT_MODEL + default persona
+#   python main.py engineer               → DEFAULT_MODEL + engineer persona
+#   python main.py nvidia/... tutor       → that model + tutor persona
+_arg1   = sys.argv[1] if len(sys.argv) > 1 else None
+_arg2   = sys.argv[2] if len(sys.argv) > 2 else None
+
+if _arg1 and _arg1 in PERSONAS:
+    # argv[1] is a persona name — use default model
+    model   = DEFAULT_MODEL
+    persona = _arg1
+else:
+    model   = _arg1 if _arg1 else DEFAULT_MODEL
+    persona = _arg2 if _arg2 and _arg2 in PERSONAS else "default"
 
 # ── Rung 3: Context budget ──────────────────────────────────
 TOKEN_BUDGET = 4000  # drop old turns when session crosses this
