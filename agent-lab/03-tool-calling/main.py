@@ -17,7 +17,7 @@ model = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_MODEL
 messages: list[ChatCompletionMessageParam] = create_initial_messages()
 
 print(f"--- Chat with Tools Started (Model: {model}) ---")
-print("Available tools: get_current_time, get_current_weather, roll_dice, get_time_in, delete_file")
+print("Available tools: get_current_time, get_current_weather, roll_dice, get_time_in, delete_file, read_file, write_file, run_bash")
 print("Type 'exit' or 'quit' to stop.\n")
 
 # Interactive chat loop
